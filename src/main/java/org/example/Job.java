@@ -4,7 +4,14 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import lombok.*;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Getter
@@ -32,6 +39,21 @@ public class Job {
     private int group;
     private String framework;
 
+    public static List<Job> readFileAndConvertedToList() {
+        final String csvFileDou = "C:\\Users\\admin\\IdeaProjects\\JavaStreamPracticeDOUSalariesStatistics\\src\\main\\resources\\swd-2024-12.csv";
+
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(csvFileDou))) {
+
+            return reader.lines()
+                    .skip(1)
+                    .map(Job::fromCsv)
+                    .toList();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // Метод для створення об'єкта Job з рядка CSV
     public static Job fromCsv(String line) {
 
@@ -43,19 +65,19 @@ public class Job {
             String[] fields = parser.parseLine(line);
 
             return new Job(
-                    stringDefaultValue(fields[0], ""),          // position
-                    stringDefaultValue(fields[1], ""),          // domain
-                    stringDefaultValue(fields[2], ""),          // city
-                    intDefaultValue(fields[3], 0),              // company
-                    intDefaultValue(fields[4], 0),              // experience
-                    intDefaultValue(fields[5], 0),              // english
-                    intDefaultValue(fields[6], 0),              // salary
-                    stringDefaultValue(fields[7], ""),          // technology
-                    stringDefaultValue(fields[8], ""),          // specialization
-                    stringDefaultValue(fields[9], ""),          // period
-                    intDefaultValue(fields[10], 0),             // title
-                    intDefaultValue(fields[11], 0),             // group
-                    stringDefaultValue(fields[12], "")          // framework
+                    stringDefaultValue(fields[0]),          // position
+                    stringDefaultValue(fields[1]),          // domain
+                    stringDefaultValue(fields[2]),          // city
+                    intDefaultValue(fields[3]),             // company
+                    intDefaultValue(fields[4]),             // experience
+                    intDefaultValue(fields[5]),             // english
+                    intDefaultValue(fields[6]),             // salary
+                    stringDefaultValue(fields[7]),          // technology
+                    stringDefaultValue(fields[8]),          // specialization
+                    stringDefaultValue(fields[9]),          // period
+                    intDefaultValue(fields[10]),            // title
+                    intDefaultValue(fields[11]),            // group
+                    stringDefaultValue(fields[12])          // framework
             );
         } catch (IOException e) {
             throw new RuntimeException("Помилка під час розбору CSV рядка", e);
@@ -65,19 +87,16 @@ public class Job {
     /**
      * Метод для обробки числових значень
      */
-    public static int intDefaultValue(String value, int defaultValue) {
+    private static int intDefaultValue(String value) {
 
         if (value == null) {
-
-            return defaultValue;
+            return 0;
         }
         if (value.trim().isEmpty()) {
-
-            return defaultValue;
+            return 0;
         }
-
         if (value.trim().equals("NA")) {
-            return defaultValue;
+            return 0;
         }
 
         return Integer.parseInt(value.trim());
@@ -87,17 +106,77 @@ public class Job {
     /**
      * Метод для обробки рядків
      */
-    public static String stringDefaultValue(String value, String defaultValue) {
+    private static String stringDefaultValue(String value) {
 
         if (value == null) {
-            return defaultValue;
+            return "";
         }
         if (value.trim().isEmpty()) {
-            return defaultValue;
+            return "";
         }
         if (value.trim().equals("NA")) {
-            return defaultValue;
+            return "";
         }
         return value.trim();
+    }
+
+    public static Map<String, Integer> calculator(List<Job> list) {
+
+        int maxSalary = list.stream()
+                .map(Job::getSalary)
+                .max(Integer::compare)
+                .orElse(0);
+
+        int minSalary = list.stream()
+                .map(Job::getSalary)
+                .min(Integer::compare)
+                .orElse(0);
+
+        int averageSalary = list.stream()
+                .mapToInt(Job::getSalary)
+                .sum();
+
+        Map<String, Integer> result = new HashMap<>();
+        result.put("maxSalary: ", maxSalary);
+        result.put("minSalary: ", minSalary);
+        result.put("averageSalary: ", averageSalary / list.size());
+        result.put("medianSalary: ", median(list));
+
+        return result;
+    }
+
+    private static int median(List<Job> list) {
+
+        List<Integer> medianSalaryStream = list.stream()
+                .map(Job::getSalary)
+                .sorted()
+                .toList();
+
+        if (medianSalaryStream.size() % 2 == 1) {
+
+            return medianSalaryStream.get(medianSalaryStream.size() / 2);
+        } else {
+            int mid1 = medianSalaryStream.get(medianSalaryStream.size() / 2 - 1);
+            int mid2 = medianSalaryStream.get(medianSalaryStream.size() / 2);
+
+            return (mid1 + mid2) / 2;
+        }
+    }
+
+    public static <K1, K2> Map<K1, Map<K2, Double>> mapReduce(
+            List<Job> list,
+            Function<Job, K1> firstKeyFunction,
+            Function<Job, K2> secondKeyFunction,
+            Function<Job, Integer> avgSalary
+    ) {
+        return list.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                firstKeyFunction,
+                                Collectors.groupingBy(
+                                        secondKeyFunction,
+                                        Collectors.averagingInt(
+                                                avgSalary::apply)))
+                );
     }
 }
