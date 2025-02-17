@@ -85,6 +85,22 @@ class JobTest {
         groupA.forEach((key, value) -> System.out.println(key + " " + value));
 
         //System.out.println(groupA);
+    }
+
+    @Test
+    void stats() {
+
+        List<Job> javaJobs = jobs.stream()
+                .filter(job -> job.getPosition().equals("Software Engineer"))
+                .filter(job -> job.getTechnology().equals("Java"))
+                .toList();
+
+        Stats stats1 = Job.statsTeeing(javaJobs);
+        Stats stats2 = Job.statsSummary(javaJobs);
+
+        assertEquals(stats1, stats2);
+
+        System.out.println(stats1);
 
     }
 }

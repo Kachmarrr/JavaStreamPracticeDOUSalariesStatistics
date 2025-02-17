@@ -145,6 +145,33 @@ public class Job {
         return result;
     }
 
+    public static Stats statsTeeing(List<Job> list) {
+
+        Stats stats = list.stream()
+                .map(Job::getSalary)
+                .collect(Collectors.teeing(
+                        Collectors.minBy(Integer::compareTo),
+                        Collectors.maxBy(Integer::compareTo),
+                        (min, max) -> {
+
+                            double avg = list.stream().mapToInt(Job::getSalary).average().orElse(0);
+
+                            return new Stats(min.orElse(0), max.orElse(0), (int) avg);
+                        }
+                ));
+        return stats;
+    }
+
+    public static Stats statsSummary(List<Job> list) {
+
+        IntSummaryStatistics stats = list.stream()
+                .mapToInt(Job::getSalary)
+                .summaryStatistics();
+
+        return new Stats(stats.getMin(), stats.getMax(), (int) stats.getAverage());
+    }
+
+
     private static int median(List<Job> list) {
 
         List<Integer> medianSalaryStream = list.stream()
@@ -179,4 +206,5 @@ public class Job {
                                                 avgSalary::apply)))
                 );
     }
+
 }
