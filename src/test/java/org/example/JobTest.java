@@ -20,7 +20,7 @@ class JobTest {
     @BeforeEach
     void setUp() {
 
-        jobs = Job.readFileAndConvertedToList();
+        jobs = FileManager.readFileAndConvertedToList();
     }
 
     @Test
@@ -49,7 +49,7 @@ class JobTest {
                 .filter(job -> job.getTechnology().equals("Java"))
                 .toList();
 
-        Map<String, Integer> map = Job.calculator(javaJobs);
+        Map<String, Integer> map = Stats.calculator(javaJobs);
 
         map.forEach((key, value) -> System.out.println(key + " " + value));
     }
@@ -62,7 +62,7 @@ class JobTest {
                 .filter(job -> job.getTechnology().equals("Python"))
                 .toList();
 
-        Map<String, Integer> map = Job.calculator(pythonJobs);
+        Map<String, Integer> map = Stats.calculator(pythonJobs);
 
         map.forEach((key, value) -> System.out.println(key + " " + value));
     }
@@ -75,7 +75,7 @@ class JobTest {
                 .filter(job -> job.getTechnology().equals("Java"))
                 .toList();
 
-        Map<String, Map<String, Double>> groupA = Job.mapReduce(
+        Map<String, Map<String, Double>> groupA = Stats.mapReduce(
                 javaJobs,
                 Job::getPosition,
                 Job::getTechnology,
@@ -95,12 +95,36 @@ class JobTest {
                 .filter(job -> job.getTechnology().equals("Java"))
                 .toList();
 
-        Stats stats1 = Job.statsTeeing(javaJobs);
-        Stats stats2 = Job.statsSummary(javaJobs);
+        Stats stats1 = Stats.statsTeeing(javaJobs);
+        Stats stats2 = Stats.statsSummary(javaJobs);
 
         assertEquals(stats1, stats2);
 
         System.out.println(stats1);
+
+    }
+
+    @Test
+    void writeToFile() throws IOException {
+
+        List<Job> javaJobs = jobs.stream()
+                .filter(job -> job.getPosition().equals("Software Engineer"))
+                .filter(job -> job.getTechnology().equals("Java"))
+                .toList();
+
+        FileManager.writeToTXTFile(javaJobs);
+
+    }
+
+    @Test
+    void writeToCSVFile() throws IOException {
+
+        List<Job> javaJobs = jobs.stream()
+                .filter(job -> job.getPosition().equals("Software Engineer"))
+                .filter(job -> job.getTechnology().equals("Java"))
+                .toList();
+
+        FileManager.writeToCSVFile(javaJobs, "StatsJavaDOU");
 
     }
 }
